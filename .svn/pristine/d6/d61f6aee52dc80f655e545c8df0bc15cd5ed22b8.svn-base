@@ -1,0 +1,336 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package org.foi.nwtis.igradiski.zadaca_1;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.Socket;
+import java.net.SocketException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.foi.nwtis.igradiski.konfiguracije.Konfiguracija;
+import org.foi.nwtis.igradiski.konfiguracije.KonfiguracijaApstraktna;
+import org.foi.nwtis.igradiski.konfiguracije.NeispravnaKonfiguracija;
+import org.foi.nwtis.igradiski.konfiguracije.NemaKonfiguracije;
+
+
+public class ZahtjevAviona extends Thread {
+    Socket veza;
+    ThreadGroup grupa;
+    int broj;
+    static boolean tocnostZaprimljeneKomande =false;
+    static String odgovorServera="";
+    ZahtjevAviona(Socket veza, ThreadGroup GrupaDretvi, String name,int broj) {
+       super(name+broj);
+       this.veza= veza;
+       this.grupa=GrupaDretvi;
+       this.broj=broj;
+    }
+
+    @Override
+    public void interrupt() {
+        super.interrupt(); //To change body of generated methods, choose Tools | Templates.
+    }
+     @Override
+    public synchronized void start() {
+        super.start(); //To change body of generated methods, choose Tools | Templates.
+        
+    }
+
+    @Override
+    public void run() {
+            try {
+                InputStream inps = veza.getInputStream();
+                OutputStream outs = veza.getOutputStream();
+                OutputStreamWriter osw = new OutputStreamWriter(outs);
+                StringBuilder tekst = new StringBuilder();
+                ByteArrayOutputStream output = new ByteArrayOutputStream();
+                while (true) {
+                    int i = inps.read();
+                    if (i == -1) {
+                        break;
+                    }
+                    output.write(i);
+                }
+                byte outputByteova[]= output.toByteArray();
+                String vrijednost= new String(outputByteova,"UTF-8");
+                ObradiZahtjevKlijenta(vrijednost.toString());
+                osw.write(odgovorServera);
+                osw.flush();
+                veza.shutdownOutput();
+                veza.shutdownInput();
+                veza.close();
+            } catch (IOException ex) {
+                Logger.getLogger(ServerDretva.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(ServerDretva.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+    }
+    public static void ObradiZahtjevKlijenta(String komanda){
+        boolean tocanParametar = ProvjeriParametre(komanda);
+        if(!tocanParametar){
+            
+        }
+        else{
+            
+        }
+    }
+     public static boolean ProvjeriParametre(String komanda) {
+        if (komanda.contains("KRAJ")) {
+            if(ProvjeriIspravnostKomandeKraj(komanda)){
+                ArrayList<String>korisnik = ObradiParametreOpcijeKraj(komanda);
+                ProvjeriPostojanjeKorisnika(korisnik);
+            }
+        }
+        if (komanda.contains("DODAJ")) {
+            if(ProvjeriIspravnostKomandeDodaj(komanda)){
+                ArrayList<String>korisnik = ObradiParametreOpcijeDodaj(komanda);
+                ProvjeriPostojanjeKorisnika(korisnik);
+            }
+        }
+        if (komanda.contains("UZLETIO")) {
+            if(ProvjeriIspravnostKomandeUzletio(komanda)){
+                ArrayList<String>korisnik = ObradiParametreOpcijeUzletio(komanda);
+                ProvjeriPostojanjeKorisnika(korisnik);
+            }
+        }
+        if (komanda.contains("ISPIS")) {
+            if(ProvjeriIspravnostKomandeIspis(komanda)){
+                ArrayList<String>korisnik = ObradiParametreOpcijeIspis(komanda);
+                ProvjeriPostojanjeKorisnika(korisnik);
+            }
+        }
+        return true;
+    }
+    public static boolean ProvjeriIspravnostKomandeUzletio(String komanda){
+        boolean tocnostKomande = false;
+        System.out.println(komanda);
+        String sintaksa ="(KORISNIK [a-z|A-Z|0-9|_|-|!|#|*]{1,50}; )(LOZINKA [a-z|A-Z|0-9|_|-|!|#|*]{1,50}; )"
+                + "(UZLETIO [a-z|A-Z|0-9|_|-|!|#|*]{3,50}; )(POLAZIŠTE [a-z|A-Z|0-9|_|-|!|#|*]{3,50}; )"
+                + "(ODREDIŠTE [a-z|A-Z|0-9|_|-|!|#|*]{3,50}; )(TRAJANJE [0-9]{1,10};)";
+        Pattern pattern = Pattern.compile(sintaksa);
+        Matcher m = pattern.matcher(komanda);
+        tocnostKomande=m.matches();
+        if(!tocnostKomande)
+            odgovorServera="ERROR 02; Sintaksa zahtjeva nije ispravna;";
+        return tocnostKomande;
+    }
+    
+    public static ArrayList<String> ObradiParametreOpcijeUzletio(String komanda){
+        ArrayList<String> lista = new ArrayList<>();
+        String[] podaciKorisnika = komanda.split(";");
+        String korIme=podaciKorisnika[0].substring(9);
+        String lozinka=podaciKorisnika[1].substring(9);
+        String komandaTrim = komanda.substring(38);
+        String uzletio=podaciKorisnika[2].substring(9);
+        String polaziste=podaciKorisnika[3].substring(11);
+        String odrediste=podaciKorisnika[4].substring(11);
+        String trajanje =podaciKorisnika[5].substring(10);
+        lista.add(korIme);
+        lista.add(lozinka);
+        lista.add(komandaTrim);
+        lista.add(uzletio);
+        lista.add(polaziste);
+        lista.add(odrediste);
+        lista.add(trajanje);
+        return lista;
+    }
+     
+    public static ArrayList<String> ObradiParametreOpcijeIspis(String komanda){
+        ArrayList<String> lista = new ArrayList<>();
+        String[] podaciKorisnika = komanda.split(";");
+        String korIme=podaciKorisnika[0].substring(9);
+        String lozinka=podaciKorisnika[1].substring(9);
+        String naredba = podaciKorisnika[2].substring(1);
+        lista.add(korIme);
+        lista.add(lozinka);
+        lista.add(naredba);
+        return lista;
+    }
+    public static boolean ProvjeriIspravnostKomandeIspis(String komanda){
+        boolean tocnostKomande = false;
+        String sintaksa ="(KORISNIK [a-z|A-Z|0-9|_|-|!|#|*]{1,50}; )(LOZINKA [a-z|A-Z|0-9|_|-|!|#|*]{1,50}; )(ISPIS [a-z|A-Z|0-9|_|-|!|#|*]{1,50};)";
+        Pattern pattern = Pattern.compile(sintaksa);
+        Matcher m = pattern.matcher(komanda);
+        tocnostKomande=m.matches();
+        if(!tocnostKomande)
+            odgovorServera="ERROR 02; Sintaksa zahtjeva nije ispravna;";
+        return tocnostKomande;
+    }
+    public static boolean ProvjeriIspravnostKomandeDodaj(String komanda){
+        boolean tocnostKomande = false;
+        String sintaksa ="(KORISNIK [a-z|A-Z|0-9|_|-|!|#|*]{1,50}; )(LOZINKA [a-z|A-Z|0-9|_|-|!|#|*]{1,50}; )(DODAJ [0-9]{1,10};)";
+        Pattern pattern = Pattern.compile(sintaksa);
+        Matcher m = pattern.matcher(komanda);
+        tocnostKomande=m.matches();
+        if(!tocnostKomande)
+            odgovorServera="ERROR 02; Sintaksa zahtjeva nije ispravna;";
+        return tocnostKomande;
+    }
+    public static ArrayList<String> ObradiParametreOpcijeDodaj(String komanda){
+        ArrayList<String> lista = new ArrayList<>();
+        String[] podaciKorisnika = komanda.split(";");
+        String korIme=podaciKorisnika[0].substring(9);
+        String lozinka=podaciKorisnika[1].substring(9);
+        String naredba = podaciKorisnika[2].substring(1);
+        lista.add(korIme);
+        lista.add(lozinka);
+        lista.add(naredba);
+        return lista;
+    }
+    public static void ProvjeriPostojanjeKorisnika(ArrayList<String> korisnikData) {
+        String username = korisnikData.get(0);
+        String password = korisnikData.get(1);
+        String naredba = korisnikData.get(2);
+        boolean korisnikPostoji=false;
+        for (Korisnik k : Korisnik.KorisniciList) {
+            if (k.getUsername().equals(username)&& k.getPassword().equals(password)) {
+               korisnikPostoji=true;
+            }
+        }
+        if(korisnikPostoji){
+            System.out.println("Komanda koja je dosla je:"+ naredba);
+            ObradiNaredbu(naredba); 
+        }
+        else{
+            odgovorServera="ERROR 03; Korisnik nije legitiman(krivi username ili password);";
+        }
+    }
+    public static void ObradiNaredbu(String komanda){
+        if (komanda.contains("KRAJ")) {
+            
+        }
+        if (komanda.contains("DODAJ")) {
+            PovecajMaksimalniBrojDretvi(komanda);
+        }
+        if (komanda.contains("UZLETIO")) {
+            
+        }
+        if (komanda.contains("ISPIS")) {
+            OdradiKomanduIspis(komanda);
+        }
+    }
+    public static void OdradiKomanduIspis(String komanda){
+        String nazivAviona = komanda.substring(6);
+        Avion a= DohvatiPodatkeOAvionu(nazivAviona);
+        if(a == null){
+            odgovorServera= "ERROR 16; Ne postoji taj avion!";
+        }
+        else{
+            IspisiDohvaceniAvion(a);
+            odgovorServera= "Postoji avion";
+            PripremiKomanduServeruSimulatoraLeta(a);
+        }
+    }
+    public static void PripremiKomanduServeruSimulatoraLeta(Avion a){
+        String naredbaServeru="POZICIJA: "+a.let+";";
+        File f = ServerAviona.getDatoteka();
+        Konfiguracija konfig;
+        try {
+            konfig = KonfiguracijaApstraktna.preuzmiKonfiguraciju(f.getName());
+            int port = Integer.parseInt(konfig.dajPostavku("port.simulator"));
+            PosaljiKomanduServeruSimulatoraLeta(port,naredbaServeru);
+            
+        } catch (NemaKonfiguracije ex) {
+            Logger.getLogger(ServerDretva.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (NeispravnaKonfiguracija ex) {
+            Logger.getLogger(ServerDretva.class.getName()).log(Level.SEVERE, null, ex);
+        }  
+    }
+    public static void PosaljiKomanduServeruSimulatoraLeta(int port,String komanda){
+        try {
+            Socket veza= new Socket("localhost",port);
+            InputStream inps = veza.getInputStream();
+            OutputStream outs= veza.getOutputStream();
+            OutputStreamWriter osw= new OutputStreamWriter(outs);
+            System.out.println("Salje komandu:"+komanda);
+            osw.write(komanda);
+            osw.flush();
+            veza.shutdownOutput();
+            StringBuilder tekst = new StringBuilder();
+            while (true) {
+                int i = inps.read();
+                if (i == -1) {
+                    break;
+                }
+                tekst.append((char) i);
+            }
+            System.out.println(tekst);
+            veza.shutdownInput();
+            veza.close();
+        } catch (SocketException e) {
+                System.out.println(e.getMessage());
+            } catch (IOException ex) {
+                System.out.println(ex.getMessage());
+            }
+    }
+    
+    public static void IspisiDohvaceniAvion(Avion a ){
+        String avionData = "LET "+a.let+";POLAZIŠTE "+a.polaziste+";ODREDIŠTE "+a.odrediste+";POLIJETANJE "+a.getPolijetanje()+";SLIJETANJE "+a.getSlijetanje()+";";
+        System.out.println("====================================================");
+        System.out.println(avionData);
+        System.out.println("====================================================");
+    }
+    public static Avion DohvatiPodatkeOAvionu(String naziv) {
+        Avion avion = null;
+        for (Avion a : ServerAviona.kolekcijaAviona) {
+            if (a.let.equals(naziv)) {
+                avion=a;
+            } 
+        }
+        return avion;
+    }
+    public static void PovecajMaksimalniBrojDretvi(String komanda){
+        try{
+            int broj = Integer.parseInt(komanda.substring(6));
+        ServerAviona.maxBrojDretvi+=broj;
+        odgovorServera="OK;";
+        }
+        catch(Exception ex){
+            odgovorServera="ERROR 12; Broj dretvi se ne može povećati!";
+        }
+        
+    }
+    public static boolean ProvjeriIspravnostKomandeKraj(String komanda){
+        boolean tocnostKomande = false;
+        String sintaksa ="(KORISNIK [a-z|A-Z|0-9|_|-|!|#|*]{1,50}; )(LOZINKA [a-z|A-Z|0-9|_|-|!|#|*]{1,50}; )(KRAJ;)";
+        Pattern pattern = Pattern.compile(sintaksa);
+        Matcher m = pattern.matcher(komanda);
+        tocnostKomande=m.matches();
+        if(!tocnostKomande)
+            odgovorServera="ERROR 02; Sintaksa zahtjeva nije ispravna;";
+        return tocnostKomande;
+    }
+    public static ArrayList<String> ObradiParametreOpcijeKraj(String komanda){
+        ArrayList<String> lista = new ArrayList<>();
+        String[] podaciKorisnika = komanda.split(";");
+        String korIme=podaciKorisnika[0].substring(9);
+        String lozinka=podaciKorisnika[1].substring(9);
+        String naredba = podaciKorisnika[2].substring(1);
+        lista.add(korIme);
+        lista.add(lozinka);
+        lista.add(naredba);
+        return lista;
+    }
+    public synchronized void ispis(String tekst) {
+            System.out.println(this.getName()+" "+tekst);
+        }
+
+}

@@ -1,0 +1,23 @@
+
+package org.foi.nwtis.igradiski.zadaca_1;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+
+public class Avion {
+    String let;
+    SimpleDateFormat formatDatuma = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
+    Date slijetanje;
+    Date polijetanje;
+
+    public Avion(String let, String polijetanje, String slijetanje) throws ParseException {
+        this.let = let;
+        this.slijetanje =formatDatuma.parse(slijetanje);
+        this.polijetanje = formatDatuma.parse(polijetanje);
+    }
+    
+    
+    
+}

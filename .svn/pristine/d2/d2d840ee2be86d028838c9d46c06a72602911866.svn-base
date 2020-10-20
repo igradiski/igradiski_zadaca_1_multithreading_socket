@@ -1,0 +1,41 @@
+package org.foi.nwtis.igradiski.zadaca_1;
+
+import java.io.File;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class ServerSimulatorLeta {
+
+    public static void main(String[] args) {
+        String sintaksa = "(ServerSimulatoraLeta )?(datoteka\\.((?:txt|xml|bin|json)))";
+        
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < args.length; i++) {
+            sb.append(args[i]).append(" ");
+        }
+        String p = sb.toString().trim();
+        Pattern pattern = Pattern.compile(sintaksa);
+        Matcher m = pattern.matcher(p);
+        boolean status = m.matches();
+        if (status) {
+            int poc = 0;
+            int kraj = m.groupCount();
+            for (int i = poc; i <= kraj; i++) {
+                System.out.println(i + ". " + m.group(i));
+            }
+        } else {
+            System.out.println("Ne odgovara!");
+            return;
+        }
+        File f = new File(m.group(2));
+        if (f.exists()) {
+            System.out.println("Postoji datoteka!");
+            UcitajPostavke(f);
+        }
+        else 
+            return;     
+    }
+    private static void UcitajPostavke(File f){
+        //TODO ucitaj postavke iz datoteke konfiguracije
+    }
+}

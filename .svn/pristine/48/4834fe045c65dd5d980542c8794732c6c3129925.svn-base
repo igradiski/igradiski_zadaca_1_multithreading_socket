@@ -1,0 +1,143 @@
+package org.foi.nwtis.igradiski.zadaca_1;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import static java.lang.System.in;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
+import java.util.Date;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.foi.nwtis.igradiski.konfiguracije.Konfiguracija;
+import org.foi.nwtis.igradiski.konfiguracije.KonfiguracijaApstraktna;
+import org.foi.nwtis.igradiski.konfiguracije.KonfiguracijaTXT;
+import org.foi.nwtis.igradiski.konfiguracije.NeispravnaKonfiguracija;
+import org.foi.nwtis.igradiski.konfiguracije.NemaKonfiguracije;
+
+public class ServerSimulatorLeta {
+
+    Socket klijent;
+    Konfiguracija konfig;
+
+    public ServerSimulatorLeta(Socket klijent, Konfiguracija konfig) {
+        
+        this.klijent = klijent;
+        this.konfig = konfig;
+    }
+
+    public static void main(String[] args) throws NemaKonfiguracije, NeispravnaKonfiguracija {
+        String sintaksa = "(ServerSimulatoraLeta )?(datoteka\\.((?:txt|xml|bin|json)))";
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < args.length; i++) {
+            sb.append(args[i]).append(" ");
+        }
+        String p = sb.toString().trim();
+        Pattern pattern = Pattern.compile(sintaksa);
+        Matcher m = pattern.matcher(p);
+        boolean status = m.matches();
+        if (status) {
+            int poc = 0;
+            int kraj = m.groupCount();
+            for (int i = poc; i <= kraj; i++) {
+                System.out.println(i + ". " + m.group(i));
+            }
+        } else {
+            System.out.println("Ne odgovara!");
+            return;
+        }
+        File f = new File(m.group(2));
+        if (f.exists()) {
+            Konfiguracija konfig = KonfiguracijaApstraktna.preuzmiKonfiguraciju(f.getName());
+            int port = Integer.parseInt(konfig.dajPostavku("port.simulator"));
+            int maksCekaca = Integer.parseInt(konfig.dajPostavku("maks.cekaca"));
+            boolean portSlobodan = ProvjeraZauzetostiPorta(port);
+            if (portSlobodan) {
+                PokreniServer(port, maksCekaca, konfig);
+            }
+            else{
+                System.out.println("Port je zauzet !");
+                return;
+            }
+        } else {
+            return;
+        }
+    }
+
+    private static boolean ProvjeraZauzetostiPorta(int port) {
+        boolean portFree;
+        try (var ignored = new ServerSocket(port)) {
+            portFree = true;
+            return portFree;
+        } catch (IOException e) {
+            portFree = false;
+            return portFree;
+        }
+    }
+
+    private static void PokreniServer(int port, int maksCekaca, Konfiguracija konfig) {
+        System.out.println("Pokretanje servera!");
+        try {
+            ServerSocket server = new ServerSocket(port);
+            System.out.println("Čekam vezu na vratima: " + port);
+            while (true) {
+                Socket veza = server.accept();
+                Thread dretva = new ServerSimulatorLetaDretva(veza);
+                dretva.start();
+            }
+
+        } catch (IOException ex) {
+            System.out.println("Port je zauzet!");
+        }
+    }
+}
+ class ServerSimulatorLetaDretva extends Thread {
+     Socket veza;
+
+    public ServerSimulatorLetaDretva(Socket veza) {
+        this.veza = veza;
+    }
+
+    @Override
+    public void interrupt() {
+        super.interrupt(); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+     public void run() {
+         try (
+                 InputStream inps = veza.getInputStream();
+                 OutputStream outs = veza.getOutputStream();) {
+             StringBuilder tekst = new StringBuilder();
+             while (true) {
+                 int i = inps.read();
+                 if (i == -1) {
+                     break;
+                 }
+                 tekst.append((char) i);
+             }
+             System.out.println("Primljeno: "+tekst);
+             outs.write("Komanda zaprimljena!".getBytes());
+             outs.flush();
+             veza.shutdownOutput();
+             veza.shutdownInput();
+             veza.close();
+         } catch (SocketException e) {
+
+         } catch (IOException ex) {
+
+         }
+     }
+
+    @Override
+    public synchronized void start() {
+        super.start(); //To change body of generated methods, choose Tools | Templates.
+    }
+     
+     
+     
+ }

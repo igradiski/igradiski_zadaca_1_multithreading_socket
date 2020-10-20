@@ -1,0 +1,50 @@
+
+package org.foi.nwtis.igradiski.zadaca_1;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+
+public class ServisAviona extends Thread{
+
+    int intervalPohrane=0;
+    String datotekaAvioni;
+    ThreadGroup grupaDretvi;
+
+    ServisAviona(String intervalPohrane, String datotekaAvioni, ThreadGroup GrupaDretviSD, String name,int broj) {
+        super(name+broj);
+        this.intervalPohrane=Integer.parseInt(intervalPohrane);
+        this.grupaDretvi=GrupaDretviSD;
+        
+    }
+    @Override
+    public void interrupt() {
+        super.interrupt(); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void run() {
+        while(1==1){
+            System.out.println("Radim serijalizaciju!");
+            double vrijemePocetka=System.currentTimeMillis();
+            Serijalizacija();
+            double trajanje = System.currentTimeMillis()-vrijemePocetka;
+            double intervalMilis= intervalPohrane*1000;
+            double spavanje=intervalMilis-trajanje;
+            try {
+                sleep((long) spavanje);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(ServisAviona.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } 
+    }
+    public void Serijalizacija(){
+        
+    }
+
+    @Override
+    public synchronized void start() {
+        super.start();
+    }
+    
+}

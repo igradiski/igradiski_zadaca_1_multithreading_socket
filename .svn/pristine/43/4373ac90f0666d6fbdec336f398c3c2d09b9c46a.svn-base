@@ -1,0 +1,149 @@
+package org.foi.nwtis.igradiski.zadaca_1;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class KorisnikZaServerSimulatoraLeta {
+
+    public static void main(String[] args) throws InterruptedException {
+        //sa navodnicima
+        //String sintaksa = "(KorisnikAviona)( -k [a-z|A-Z|0-9|_|-]{3,10})?( -l [a-z|A-Z|0-9|!|#|-]{3,10})?( -s (?:[0-9]{1,3}\\.){3}[0-9]{1,3} | -s [a-z|A-Z|0-9|_|-|.]{3,50} )?(-p (8[0-8][0-9]{2}|89[0-8][0-9]|899[0-9]))?( --kraj| --dodajDretve (([1-9]|1[0-9]|20))| --uzletio \"AerodromPolazište: [a-z|A-Z|0-9|_|-]{3,50}, AerodromOdredište: [a-z|A-Z|0-9|_|-]{3,50}, Avion: [a-z|A-Z|0-9|_|-]{1,50}, trajanjeLeta: [0-9]+\"| --ispis [a-z|A-Z|0-9|_|-]{1,50})";
+        String sintaksa = "(KorisnikAviona)( -k [a-z|A-Z|0-9|_|-]{3,10})?( -l [a-z|A-Z|0-9|!|#|-]{3,10})?"
+                + "( -s (?:[0-9]{1,3}\\.){3}[0-9]{1,3} | -s [a-z|A-Z|0-9|_|-|.]{3,50} )?"
+                + "(-p (8[0-8][0-9]{2}|89[0-8][0-9]|899[0-9]))?( --kraj| --dodajDretve"
+                + " (([1-9]|1[0-9]|20))| --uzletio AerodromPolazište: [a-z|A-Z|0-9|_|-]{3,50},"
+                + " AerodromOdredište: [a-z|A-Z|0-9|_|-]{3,50}, Avion: [a-z|A-Z|0-9|_|-]{1,50}, "
+                + "trajanjeLeta: [0-9]+| --ispis [a-z|A-Z|0-9|_|-]{1,50}) ";
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < args.length; i++) {
+            sb.append(args[i]).append(" ");
+        }
+        String p = sb.toString();
+        Pattern pattern = Pattern.compile(sintaksa);
+        Matcher m = pattern.matcher(p);
+        boolean status = m.matches();
+        if (status) {
+            int poc = 0;
+            int kraj = m.groupCount();
+            for (int i = poc; i <= kraj; i++) {
+                System.out.println(i + ". " + m.group(i));
+            }
+        } else {
+            System.out.println("Ne odgovara!");
+            return;
+        }
+        String komanda = ProvjeriParametre(m);
+        System.out.println(komanda);
+        boolean serverRadi = ProvjeriServer(m.group(6));
+        String adresa = m.group(4).substring(4,m.group(4).length()-1);
+        if (serverRadi) {
+                PosaljiZahtjevServeru(adresa, m.group(6), komanda);
+        }
+    }
+
+    private static String ProvjeriParametre(Matcher m) {
+        String pocetniParametar = m.group(7);
+        String komanda = "";
+        if (pocetniParametar.contains(" --kraj")) {
+            komanda = ObradiParametreOpcijeKraj(m);
+        }
+        if (pocetniParametar.contains(" --dodajDretve")) {
+            komanda = ObradiParametreOpcijeDodajDretve(m);
+        }
+        if (pocetniParametar.contains(" --uzletio")) {
+            komanda = ObradiParametreOpcijeUzletio(m);
+        }
+        if (pocetniParametar.contains(" --ispis")) {
+            komanda = ObradiParametreOpcijeIspis(m);
+        }
+        return komanda;
+    }
+
+    private static String ObradiParametreOpcijeKraj(Matcher m) {
+        String korisnik = m.group(2).substring(4);
+        String lozinka = m.group(3).substring(4);
+        String komanda = "KORISNIK " + korisnik + ";" + " LOZINKA " + lozinka + ";" + " KRAJ;";
+        return komanda;
+    }
+
+    private static String ObradiParametreOpcijeDodajDretve(Matcher m) {
+        String korisnik = m.group(2).substring(4);
+        String lozinka = m.group(3).substring(4);
+        int brojDretvi = Integer.parseInt(m.group(7).substring(15));
+        String komanda = "KORISNIK " + korisnik + ";" + " LOZINKA " + lozinka + ";" + " DODAJ " + brojDretvi + ";";
+        return komanda;
+    }
+
+    private static String ObradiParametreOpcijeIspis(Matcher m) {
+        String korisnik = m.group(2).substring(4);
+        String lozinka = m.group(3).substring(4);
+        String ispis = m.group(7).substring(9);
+        String komanda = "KORISNIK " + korisnik + ";" + " LOZINKA " + lozinka + ";" + " ISPIS " + ispis + ";";
+        return komanda;
+    }
+
+    private static String ObradiParametreOpcijeUzletio(Matcher m) {
+        String korisnik = m.group(2).substring(4);
+        String lozinka = m.group(3).substring(4);
+        String detaljiAviona = m.group(7).substring(10);
+        String[] dijeloviNaredbe = detaljiAviona.split(",");
+        String polaziste = dijeloviNaredbe[0].substring(20);
+        String odrediste = dijeloviNaredbe[1].substring(20);
+        String avion = dijeloviNaredbe[2].substring(8);
+        String trajanjeLeta = dijeloviNaredbe[3].substring(15);
+        String komanda = "KORISNIK " + korisnik + ";" + " LOZINKA " + lozinka + "; " + "UZLETIO " + avion + "; "
+                + "POLAZIŠTE " + polaziste + "; " + "ODREDIŠTE " + odrediste + ", " + "TRAJANJE " + trajanjeLeta + ";";
+        return komanda;
+
+    }
+
+    private static boolean ProvjeriServer(String portServera) {
+        int port = Integer.parseInt(portServera);
+        try (var ignored = new ServerSocket(8001)) {
+            System.out.println("Server trenutno ne radi");
+            return false;
+        } catch (IOException e) {
+            return true;
+        }
+
+    }
+
+    private static void PosaljiZahtjevServeru(String adresa, String port, String komanda) {
+        try {
+            Socket veza= new Socket(adresa,Integer.parseInt(port));
+            InputStream inps = veza.getInputStream();
+            OutputStream outs= veza.getOutputStream();
+            OutputStreamWriter osw= new OutputStreamWriter(outs);
+            //osw.write(komanda);
+            //tu pises test komande
+            osw.write("LET avion123; POLIJETANJE 2020.03.25 12:00:00; SLIJETANJE 2020.03.25 18:40:00;");
+            osw.flush();
+            veza.shutdownOutput();
+            StringBuilder tekst = new StringBuilder();
+            while (true) {
+                int i = inps.read();
+                if (i == -1) {
+                    break;
+                }
+                tekst.append((char) i);
+            }
+            System.out.println("Odgovor:"+ tekst);
+            //ObradiOdgovorServera(tekst);
+            veza.shutdownInput();
+            veza.close();
+        } catch (SocketException e) {
+                System.out.println(e.getMessage());
+            } catch (IOException ex) {
+                System.out.println(ex.getMessage());
+            }
+    }
+
+}
+

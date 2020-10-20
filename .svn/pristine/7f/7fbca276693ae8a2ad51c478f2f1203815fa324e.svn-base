@@ -1,0 +1,89 @@
+
+package org.foi.nwtis.igradiski.zadaca_1;
+
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+
+public class ServisAviona extends Thread{
+
+    int intervalPohrane=0;
+    String datotekaAvioni;
+    ThreadGroup grupaDretvi;
+
+    ServisAviona(String intervalPohrane, String datotekaAvioni, ThreadGroup GrupaDretviSD, String name,int broj) {
+        super(name+broj);
+        this.intervalPohrane=Integer.parseInt(intervalPohrane);
+        this.grupaDretvi=GrupaDretviSD;
+        
+    }
+
+    public int getIntervalPohrane() {
+        return intervalPohrane;
+    }
+    
+    @Override
+    public void interrupt() {
+        super.interrupt(); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void run() {
+        while(1==1){
+            double vrijemePocetka=System.currentTimeMillis();
+            try {
+                Serijalizacija();
+            } catch (FileNotFoundException ex) {
+                Logger.getLogger(ServisAviona.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (IOException ex) {
+                Logger.getLogger(ServisAviona.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (ParseException ex) {
+                Logger.getLogger(ServisAviona.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            double trajanje = System.currentTimeMillis()-vrijemePocetka;
+            double intervalMilis= intervalPohrane*1000;
+            double spavanje=intervalMilis-trajanje;
+            try {
+                sleep((long) spavanje);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(ServisAviona.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            System.out.println("Serijalizacija zavrsena!"); 
+        } 
+        
+    }
+    public synchronized static void  Serijalizacija() throws FileNotFoundException, IOException, ParseException{
+        StvoriZapiseAviona();
+    }
+    public synchronized static  void StvoriZapiseAviona() throws FileNotFoundException, IOException, ParseException {
+        ArrayList<String> poljeAviona = new ArrayList<>();
+        for(Avion a: ServerAviona.kolekcijaAviona){
+            String avionData = "LET "+a.let+";POLAZIŠTE "+a.polaziste+";ODREDIŠTE "+a.odrediste+";POLIJETANJE "+a.getPolijetanje()+";SLIJETANJE "+a.getSlijetanje()+";";
+            poljeAviona.add(avionData);
+        }
+        ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("avioni.bin"));
+        oos.writeObject(poljeAviona);
+        oos.close();
+    }
+    public synchronized static String IspraviFormatDatuma(String datum) throws ParseException{
+            SimpleDateFormat kae = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
+            Date date = kae.parse(datum);
+            return kae.format(date);
+    }
+
+    @Override
+    public synchronized void start() {
+        super.start();
+    }
+
+    
+    
+}

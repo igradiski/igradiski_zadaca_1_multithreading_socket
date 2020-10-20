@@ -1,0 +1,53 @@
+//"icao","naziv","drzava","koordinate"
+//"AYPY","Port Moresby Jacksons International Airport","PG","147.22000122070312, -9.4433803"
+package org.foi.nwtis.igradiski.zadaca_1;
+
+import java.util.ArrayList;
+
+public class Aerodrom {
+
+    public static ArrayList<Aerodrom> AerodromiList = new ArrayList<>();
+    private String ICAO;
+    private String Naziv;
+    private String Drzava;
+    private double geoSirina;
+    private double geoDuzina;
+
+    public Aerodrom(String ICAO, String Naziv, String Drzava, double geoSirina, double geoDuzina) {
+        this.ICAO = ICAO;
+        this.Naziv = Naziv;
+        this.Drzava = Drzava;
+        this.geoSirina = geoSirina;
+        this.geoDuzina = geoDuzina;
+        AerodromiList.add(this);
+    }
+
+    public void Ispis() {
+        System.out.println(this.ICAO);
+        System.out.println(this.Naziv);
+        System.out.println(this.Drzava);
+        System.out.println(this.geoSirina);
+        System.out.println(this.geoDuzina);
+
+    }
+
+    public double getGeoSirina() {
+        return geoSirina;
+    }
+
+    public double getGeoDuzina() {
+        return geoDuzina;
+    }
+    
+
+    public String getNaziv() {
+        return Naziv;
+    }
+
+    public String getICAO() {
+        return ICAO;
+    }
+    
+    
+
+}
